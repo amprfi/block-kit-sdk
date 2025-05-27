@@ -42,9 +42,7 @@ Block Kit is a library and SDK for developing agentic modules (blocks) that can 
 
 ### Endpoints
 
-- **GET /blocks**: List of blocks
-- **POST /blocks**: Create a new block
-- **WebSocket /ws**: Real-time communication
+
 
 ## Contributing
 
