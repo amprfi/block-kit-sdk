@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import uvicorn
+
 from ws_handlers import websocket_endpoint
+from routes import router as http_router # Import the router
 
 app = FastAPI()
+
+app.include_router(http_router, prefix="/api/v1") # Include the router, perhaps with a prefix
 
 html = """
 <!DOCTYPE html>
