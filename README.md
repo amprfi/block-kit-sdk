@@ -152,7 +152,3 @@ The scaffold (`routes/__init__.py`) demonstrates hardcoded `BLOCK_TYPE`, `DEFAUL
 ## Contributing
 
 Contributions to the Block Kit SDK and scaffold are welcome! Please open an issue or submit a pull request.
-
-## License
-
-This project is licensed under the MIT License.
