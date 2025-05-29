@@ -1,93 +1,208 @@
 from blocks.models import Manifest, TransactionProposal
-from control.models import ControlSettings # Assuming ControlSettings will be passed here
-from typing import Optional # For ActionBlock's control_settings
+from control.models import ControlSettings
+from typing import Optional
 
 class BaseBlock:
+    """
+    Base class for all Block types.
+
+    Developers creating a new Block should typically inherit from `AnalystBlock`
+    or `ActionBlock`, which themselves inherit from this `BaseBlock`.
+
+    Attributes:
+        manifest (Manifest): The manifest data for this block, provided upon initialization.
+        backend_ws: Placeholder for a WebSocket connection object. Blocks requiring
+                    communication with a custom backend service (e.g., a proprietary
+                    data API, an LLM) can use this attribute to store their
+                    WebSocket client. This is separate from the block's communication
+                    with the Wallet Core.
+    """
     def __init__(self, manifest: Manifest):
+        """
+        Initializes the BaseBlock.
+
+        Args:
+            manifest: An instance of the `Manifest` model containing metadata for this block.
+        """
         self.manifest = manifest
-        # Placeholder for WebSocket connection to the block's own backend (if any)
-        self.backend_ws = None
-        print(f"Block '{self.manifest.name}' initialized.")
+        self.backend_ws = None # Initialize to None; developer must manage actual connection.
+        # Consider replacing print with logging in a real SDK:
+        # import logging
+        # logging.info(f"Block '{self.manifest.name}' initialized.")
 
     def propose_transaction(self, proposal_data: TransactionProposal) -> dict:
         """
-        Block proposes a transaction.
-        The proposal_data should be a TransactionProposal model instance.
-        API endpoints are responsible for converting raw request data to this model.
-        """
-        # In a real scenario, this would involve more complex logic.
-        # For now, just log and return a standardized response.
-        print(f"Block '{self.manifest.name}' proposing transaction: {proposal_data}")
-        # This method would typically be called by the wallet core after receiving
-        # a trigger or upon the block's own internal logic (if it were actively running).
-        # The proposal is then sent to the wallet core.
-        # Here, we simulate the block generating the proposal structure.
+        Formats a transaction proposal to be sent from the block to the Wallet Core.
 
-        # For the purpose of this base class, let's assume it returns the proposal
-        # that would then be sent to the wallet core.
+        Block developers should ensure their block's logic culminates in creating a
+        `TransactionProposal` object and then can use this method (or override it)
+        to structure the final output. The actual submission of this proposal to
+        the Wallet Core is handled by the Block Kit server infrastructure via its API.
+
+        Args:
+            proposal_data: A `TransactionProposal` model instance detailing the transaction.
+
+        Returns:
+            A dictionary representing the proposal, typically including a 'status'
+            and the 'proposal' details (e.g., after model dumping).
+            Example: `{"status": "proposed", "proposal": proposal_data.model_dump()}`
+        """
+        # This base implementation simply returns a standard structure.
+        # Specific block types (like ActionBlock) may add pre-checks or modifications.
         return {"status": "proposed", "proposal": proposal_data.model_dump()}
 
     async def connect_to_backend(self, backend_url: str):
-        # Placeholder for block connecting to its own backend (e.g., an LLM service)
-        # import websockets # External library, not our ws_handlers
+        """
+        Placeholder method for a block to connect to its own custom backend service
+        via WebSockets. Developers should override this or implement connection logic
+        if their block requires such a connection.
+
+        Example using the 'websockets' library (ensure it's an installed dependency):
+        ```python
+        # import websockets # Make sure 'websockets' library is installed
         # try:
         #     self.backend_ws = await websockets.connect(backend_url)
-        #     print(f"Block '{self.manifest.name}' connected to its backend at {backend_url}")
+        #     # logging.info(f"Block '{self.manifest.name}' connected to backend: {backend_url}")
         # except Exception as e:
-        #     print(f"Block '{self.manifest.name}' failed to connect to backend: {e}")
+        #     # logging.error(f"Block '{self.manifest.name}' backend connection error: {e}")
+        #     self.backend_ws = None
+        ```
+
+        Args:
+            backend_url: The URL of the custom backend WebSocket service.
+        """
+        # Developer to implement if needed.
         pass
 
     async def send_to_backend(self, message: str):
+        """
+        Placeholder method to send a message to the block's custom backend via
+        an established WebSocket connection (self.backend_ws).
+        """
         # if self.backend_ws:
-        #     await self.backend_ws.send(message)
+        #     try:
+        #         await self.backend_ws.send(message)
+        #     except Exception as e:
+        #         # logging.error(f"Error sending to backend: {e}")
+        # else:
+        #     # logging.warning("No backend WebSocket connection to send message.")
         pass
 
-    async def receive_from_backend(self):
+    async def receive_from_backend(self) -> Optional[str]:
+        """
+        Placeholder method to receive a message from the block's custom backend.
+        """
         # if self.backend_ws:
-        #     return await self.backend_ws.recv()
-        return None
+        #     try:
+        #         return await self.backend_ws.recv()
+        #     except Exception as e:
+        #         # logging.error(f"Error receiving from backend: {e}")
+        # return None
+        return None # Explicitly return None if not implemented or no connection
 
     async def close_backend_connection(self):
+        """
+        Placeholder method to close the WebSocket connection to the custom backend.
+        """
         # if self.backend_ws:
-        #     await self.backend_ws.close()
+        #     try:
+        #         await self.backend_ws.close()
+        #     except Exception as e:
+        #         # logging.error(f"Error closing backend connection: {e}")
+        #     finally:
+        #         self.backend_ws = None
         pass
 
 class AnalystBlock(BaseBlock):
-    def __init__(self, manifest: Manifest):
-        if manifest.block_type != "analyst":
-            raise ValueError("Manifest block_type must be 'analyst' for AnalystBlock.")
-        super().__init__(manifest)
-        print(f"AnalystBlock '{self.manifest.name}' initialized.")
+    """
+    Base class for Analyst Blocks.
 
-    # Analyst blocks typically provide insights, not direct transaction proposals.
-    # However, they might still use propose_transaction to suggest actions based on analysis.
-    # Or they might have other methods like `get_analysis_report()`.
+    Analyst Blocks are designed primarily for research, data gathering, and providing
+    analytical insights. They may propose transactions based on their analysis,
+    or expose other methods for the Wallet Core to retrieve reports or data.
+    """
+    def __init__(self, manifest: Manifest):
+        """
+        Initializes the AnalystBlock.
+
+        Args:
+            manifest: An instance of the `Manifest` model. Must have `block_type` set to "analyst".
+        
+        Raises:
+            ValueError: If the provided manifest's `block_type` is not "analyst".
+        """
+        if manifest.block_type != "analyst":
+            raise ValueError("Manifest 'block_type' must be 'analyst' for AnalystBlock.")
+        super().__init__(manifest)
+        # logging.info(f"AnalystBlock '{self.manifest.name}' initialized.")
+
+    # Developers can add custom methods here, e.g., get_market_report(), analyze_asset(asset_id), etc.
+    # They can still use `propose_transaction` if their analysis leads to a suggestion.
 
 class ActionBlock(BaseBlock):
+    """
+    Base class for Action Blocks.
+
+    Action Blocks are designed to execute automated strategies, by
+    proposing transactions. They operate under `ControlSettings` defined by the
+    end-user via their wallet application.
+
+    Attributes:
+        control_settings (ControlSettings): The operational limits and permissions
+                                            for this block instance.
+    """
     def __init__(self, manifest: Manifest, control_settings: ControlSettings):
+        """
+        Initializes the ActionBlock.
+
+        Args:
+            manifest: An instance of the `Manifest` model. Must have `block_type` set to "action".
+            control_settings: An instance of `ControlSettings` defining the block's operational limits.
+        
+        Raises:
+            ValueError: If the provided manifest's `block_type` is not "action".
+        """
         if manifest.block_type != "action":
-            raise ValueError("Manifest block_type must be 'action' for ActionBlock.")
+            raise ValueError("Manifest 'block_type' must be 'action' for ActionBlock.")
         super().__init__(manifest)
         self.control_settings = control_settings
-        print(f"ActionBlock '{self.manifest.name}' initialized with control settings.")
+        # logging.info(f"ActionBlock '{self.manifest.name}' initialized with control settings.")
 
     def propose_transaction(self, proposal_data: TransactionProposal) -> dict:
         """
-        ActionBlock proposes a transaction, potentially first checking against its controls.
-        Note: Full compliance check against controls would typically happen in the wallet core
-        or a dedicated ControlManager, using the user-defined ControlSettings for this block instance.
-        A block might do a preliminary check.
-        """
-        print(f"ActionBlock '{self.manifest.name}' proposing transaction: {proposal_data.model_dump()}")
+        Proposes a transaction, performing preliminary checks against its `ControlSettings`.
 
-        # Preliminary check (example - not exhaustive)
+        Note: A more comprehensive compliance check against `ControlSettings` (including
+        aspects like cumulative limits and duration) is expected to be performed by
+        the Wallet Core, using the `ControlManager`. This method provides an initial
+        safeguard within the block itself.
+
+        Args:
+            proposal_data: A `TransactionProposal` model instance.
+
+        Returns:
+            A dictionary indicating the status of the proposal. If preliminary checks
+            fail, status may be "rejected_by_block_pre_check". Otherwise, it calls
+            the base class's `propose_transaction` method.
+        """
+        # Perform preliminary checks against control settings.
         if proposal_data.asset_id != self.control_settings.asset_id:
-            print(f"Proposal asset '{proposal_data.asset_id}' does not match controlled asset '{self.control_settings.asset_id}'.")
-            return {"status": "rejected_by_block_pre_check", "reason": "Asset mismatch with controls", "proposal": proposal_data.model_dump()}
+            # logging.warning(f"ActionBlock '{self.manifest.name}': Proposal asset '{proposal_data.asset_id}' "
+            #                 f"mismatches controlled asset '{self.control_settings.asset_id}'.")
+            return {
+                "status": "rejected_by_block_pre_check",
+                "reason": "Asset mismatch with block's control settings.",
+                "proposal": proposal_data.model_dump()
+            }
 
         if proposal_data.amount > self.control_settings.max_amount_per_transaction:
-            print(f"Proposal amount {proposal_data.amount} exceeds max_amount_per_transaction {self.control_settings.max_amount_per_transaction}.")
-            return {"status": "rejected_by_block_pre_check", "reason": "Exceeds max amount per transaction", "proposal": proposal_data.model_dump()}
+            # logging.warning(f"ActionBlock '{self.manifest.name}': Proposal amount {proposal_data.amount} "
+            #                 f"exceeds max_amount_per_transaction {self.control_settings.max_amount_per_transaction}.")
+            return {
+                "status": "rejected_by_block_pre_check",
+                "reason": "Exceeds maximum amount per transaction defined in block's control settings.",
+                "proposal": proposal_data.model_dump()
+            }
 
-        # Call BaseBlock's propose_transaction for common logic/formatting
+        # If preliminary checks pass, proceed with the standard proposal process.
         return super().propose_transaction(proposal_data)

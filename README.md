@@ -53,7 +53,7 @@ The project is organized into the following main directories:
 The system uses Pydantic models for data validation and serialization:
 
 -   **`Manifest`** (`blocks/models.py`): Describes a block's metadata.
-    -   Fields: `name`, `version`, `block_type` ("analyst" or "action"), `publisher`, `description`, `license` (optional), `fees` (optional).
+    -   Fields: `name`, `version`, `block_type` ("analyst" or "action"), `publisher`, `description`, `license` (optional), `fees` (Optional[List[FeeDetail]]; a list of structured fee objects, see `FeeDetail` and specific fee types like `OneTimeFixedFee`, `RecurringFixedFee`, etc., in `blocks/models.py`).
 -   **`TransactionProposal`** (`blocks/models.py`): Structure for a transaction proposed by a block.
     -   Fields: `block_id`, `action_type` (e.g., "buy", "sell"), `asset_id`, `amount`, `currency`, `justification` (optional).
 -   **`ControlSettings`** (`control/models.py`): Defines the operational limits for an Action Block.
