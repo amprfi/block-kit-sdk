@@ -1,102 +1,157 @@
 # Block Kit
 
-Block Kit provides a library and a template FastAPI server designed to be used by **individual agentic modules (blocks)**. Each block runs its own instance of this server, allowing it to interface with a user's wallet core (via APIs and WebSockets) and its own backend services. Blocks can perform research, provide analysis (Analyst Blocks), or propose automated investment management strategies (Action Blocks).
+This repository provides two main resources for developers looking to build "blocks" – agentic modules for the AI Wallet ecosystem:
 
-This `block-kit` repository serves as the foundational library that a block developer would use and customize. The server defined here is part of the block itself, not a central management system for multiple blocks.
+1.  **Block Kit SDK (`block_kit_sdk`):** A Python library that developers will install (e.g., via `pip install block-kit-sdk` once published). It provides the foundational tools, base classes (like `AnalystBlock`, `ActionBlock`), Pydantic data models (for `Manifest`, `TransactionProposal`, `ControllerSettings`, `FeeDetail`, etc.), WebSocket utilities, and other helper functions necessary to create custom blocks.
+2.  **Scaffold Block Application:** The code in this repository also serves as a template FastAPI application. It demonstrates how to *use* the Block Kit SDK to create a runnable block server. Developers can clone or fork this scaffold as a quick starting point for their own block development.
 
-## Features
+Blocks are designed to run as independent, external servers. They interface with a user's wallet core (typically a PWA) via APIs and WebSockets. The architectural model is "Wallet-Managed State with External Blocks," meaning the user's wallet application manages user-specific state and provides necessary context to the block servers during interactions.
 
-- **WebSocket Communication**: Real-time information exchange between the wallet core and active blocks.
-- **Transaction Proposals**: Blocks propose transactions to the wallet core, which can then be executed.
-- **Manifest**: An informational card specifying block details such as type, publisher, license, fees, and description.
-- **Block Types**: Analyst and Action blocks.
-- **Control**: Limitations on block transactions set by the user when installing the block.
+## What are Blocks?
 
-## Getting Started
+Blocks are specialized modules that extend the functionality of a user's AI Wallet. There are two primary types:
+
+### Analyst Blocks
+*   **Focus:** Dedicated to research, data gathering, market analysis, signal generation, and providing informational summaries.
+*   **Output:** Deliver data, charts, textual analysis, or informational alerts directly to the user's wallet.
+*   **Interaction:** Analyst Blocks may receive data feeds or specific requests from the wallet, process them, and return insights.
+*   **Important Note:** For regulatory reasons, Analyst Blocks strictly provide information and insights; they do **not** offer financial advice, "suggestions," or "highlight opportunities" that could be construed as recommendations for financial transactions.
+
+### Action Blocks
+*   **Focus:** Designed to propose and, upon user approval via their wallet, help manage investment strategies.
+*   **Output:** Primarily generate `TransactionProposal` objects, which are sent to the wallet core for the user's review and explicit approval before any action is taken.
+*   **Interaction:** Receive market data, user preferences, and `ControllerSettings` from the wallet. They use this information, along with their internal logic, to generate transaction proposals.
+*   **Controller-Driven:** Action Blocks operate strictly within user-defined `ControllerSettings` which dictate their operational boundaries (e.g., authorized assets, transaction size limits, total cumulative limits).
+
+## Architecture Overview
+
+The Block Kit allows for blocks to be stateless in terms of user management and activity. The user's PWA wallet is responsible for managing all user-specific state and passes the necessary context to block servers for each interaction.
+
+## Core Concepts
+
+Key components and data structures within the Block Kit:
+
+-   **Manifest (`Manifest`):** A Pydantic model (`blocks/models.py`) describing a block's metadata, including its name, version, type ("analyst" or "action"), publisher, description, license, and structured fee information (`FeeDetail` models).
+-   **Transaction Proposal (`TransactionProposal`):** (Action Blocks Only) A Pydantic model (`blocks/models.py`) defining the structure for a transaction proposed by an Action Block to the wallet core.
+-   **Controller Settings (`ControllerSettings`):** A Pydantic model (`controller/models.py`) specifying the user-defined operational limits for an Action Block (e.g., `authorized_duration_days`, `asset_id`, `max_amount_per_transaction`, `cumulative_max_amount`). These are provided by the wallet to the Action Block.
+-   **WebSocket Communication:** The primary method for real-time, bidirectional communication between the user's PWA wallet and an active block server.
+-   **Fees (`FeeDetail` models):** A structured system (`blocks/models.py`) allowing blocks to define various types of fees (e.g., one-time, recurring, per-transaction).
+
+## Using the Block Kit SDK (for Block Developers)
+
+To develop a block using the (future) installable SDK:
+
+1.  **Install the SDK:**
+    ```bash
+    pip install block-kit-sdk # (Once published to PyPI)
+    ```
+2.  **Import necessary components:**
+    ```python
+    from block_kit_sdk.blocks import AnalystBlock, ActionBlock, Manifest
+    from block_kit_sdk.models import TransactionProposal # (or from block_kit_sdk.blocks.models)
+    from block_kit_sdk.controller import ControllerSettings
+    # ... and other models/utilities
+    ```
+3.  **Create your Block Class:** Inherit from `AnalystBlock` or `ActionBlock`.
+    ```python
+    class MyAnalyst(AnalystBlock):
+        async def perform_analysis(self, data: dict) -> dict:
+            # Your custom analysis logic
+            return {"insight": "Processed data"}
+
+    class MyAction(ActionBlock):
+        async def generate_proposal(self, market_data: dict) -> TransactionProposal:
+            # Your custom proposal logic, respecting self.controller_settings
+            # Ensure self.controller_manager.is_proposal_compliant(...) is checked
+            pass
+    ```
+4.  **Define your Block's Manifest:** Create an instance of the `Manifest` model.
+5.  **Integrate with a Server:** While the SDK provides core logic, you'll need a web server (like FastAPI, Flask, etc.) to expose it. The scaffold application in this repository provides a ready-to-use FastAPI setup.
+
+## The Scaffold Block Application
+
+This repository also serves as a scaffold or template for building a runnable block server using FastAPI and the Block Kit SDK.
 
 ### Prerequisites
 
-- Python 3.10+
-- Pip for package management
-- A virtual environment, such as `venv` is recommended
+-   Python 3.10+
+-   Pip for package management
+-   A virtual environment (e.g., `venv`) is highly recommended.
 
-### Installation
+### Setting up the Scaffold
 
-1.  Clone the repository:
+1.  **Clone the repository:**
     ```bash
     git clone https://github.com/amprfi/block-kit.git
     cd block-kit
     ```
-2.  Create and activate a virtual environment (example using `venv`):
+2.  **Create and activate a virtual environment:**
     ```bash
     python -m venv .venv
-    source .venv/bin/activate
+    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
     ```
-3.  Install the required packages:
+3.  **Install dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
+    *(Note: `requirements.txt` includes FastAPI, Uvicorn. In the future, it would ideally list `block-kit-sdk` if it were a separate published package, or reference a local SDK module if developed as part of a monorepo structure).*
 
-## Project Structure
+### Project Structure of the Scaffold
 
-The project is organized into the following main directories:
--   `main.py`: The main FastAPI application entry point.
--   `requirements.txt`: Python package dependencies.
--   `ws_handlers/`: Contains WebSocket connection handlers.
--   `routes/`: Defines HTTP API endpoint routers.
--   `blocks/`: Contains base classes for blocks (`base.py`) and Pydantic models for block-related data structures (`models.py`).
--   `control/`: Contains logic for managing block controls/governors (`manager.py`) and Pydantic models for control settings (`models.py`).
--   `utils/`: Utility functions (currently a placeholder).
+-   `main.py`: Main FastAPI application entry point.
+-   `requirements.txt`: Python package dependencies for the scaffold.
+-   `ws_handlers/`: Contains WebSocket connection handlers (e.g., `websocket_endpoint`).
+-   `routes/`: Defines example HTTP API endpoint routers.
+-   `blocks/`: Contains base classes (`base.py`) and Pydantic models (`models.py`) *provided by the SDK*. (In a true SDK setup, these would be imported from the installed `block_kit_sdk` package).
+-   `controller/`: Contains logic for managing block controllers (`manager.py`) and Pydantic models for controller settings (`models.py`) *provided by the SDK*.
+-   `utils/`: Utility functions (currently a placeholder, could be part of the SDK).
 
-## Core Data Models
-
-The system uses Pydantic models for data validation and serialization:
-
--   **`Manifest`** (`blocks/models.py`): Describes a block's metadata.
-    -   Fields: `name`, `version`, `block_type` ("analyst" or "action"), `publisher`, `description`, `license` (optional), `fees` (Optional[List[FeeDetail]]; a list of structured fee objects, see `FeeDetail` and specific fee types like `OneTimeFixedFee`, `RecurringFixedFee`, etc., in `blocks/models.py`).
--   **`TransactionProposal`** (`blocks/models.py`): Structure for a transaction proposed by a block.
-    -   Fields: `block_id`, `action_type` (e.g., "buy", "sell"), `asset_id`, `amount`, `currency`, `justification` (optional).
--   **`ControlSettings`** (`control/models.py`): Defines the operational limits for an Action Block.
-    -   Fields: `authorized_duration_days`, `asset_id`, `max_amount_per_transaction`, `cumulative_max_amount`.
-
-## Running the Application
+### Running the Scaffold Application
 
 1.  Ensure your virtual environment is activated and dependencies are installed.
 2.  Start the FastAPI application using Uvicorn:
     ```bash
     uvicorn main:app --reload
     ```
-    Alternatively, you can run the `main.py` script directly (if it includes `uvicorn.run`):
-    ```bash
-    python main.py
-    ```
 3.  The application will typically be available at `http://127.0.0.1:8000`.
 
-## API Endpoints
+### API Endpoints (Scaffold Examples)
 
-The block's server instance exposes the following HTTP API endpoints, prefixed with `/api/v1` (as configured in `main.py`):
+The scaffold block server exposes example HTTP API endpoints, prefixed with `/api/v1`:
 
--   **`GET /api/v1/manifest`**: Retrieves the manifest of this block instance.
-    -   **Response**: The `Manifest` object for this block.
+-   **`GET /api/v1/manifest`**: Retrieves the block's `Manifest`.
+    *   *Note: In a real block, this manifest would be dynamically loaded or defined by the block developer, not hardcoded as in the scaffold's `routes/__init__.py`.*
+-   **`POST /api/v1/propose_transaction`**: (Action Blocks) An example endpoint.
+    *   *Note: While available, the primary mechanism for Action Blocks to send proposals to the PWA wallet is expected to be via the WebSocket connection.* This HTTP endpoint might be used for other purposes, like internal testing or integration with a block's own backend services.
+-   **`GET /api/v1/controller_settings`**: (Action Blocks) An example endpoint.
+    *   *Note: `ControllerSettings` are primarily communicated from the PWA wallet to the Action Block via WebSocket during session initialization. This HTTP endpoint is less likely to be used by the PWA but could be useful for debugging or internal block logic.*
 
--   **`POST /api/v1/propose_transaction`**: Endpoint for the block to submit a transaction proposal. This would typically be called by the block's internal logic to send a proposal to the wallet core (if the wallet core polls this endpoint or if this block is part of a system where it pushes proposals).
-    -   **Request Body**: A `TransactionProposal` object. The `block_id` field within the proposal should identify this block (e.g., using a unique ID from its manifest).
-    -   **Response**: Status of the proposal (e.g., "proposed", "rejected_by_library_core") and details.
+### WebSocket Endpoint (Scaffold Example)
 
--   **`GET /api/v1/control_settings`** (For Action Blocks only): Retrieves the current control settings applied to this Action Block instance.
-    -   **Response**: The `ControlSettings` object for this block. Returns 404 if not an Action Block or if settings are not configured.
+-   **`/ws`**: An example WebSocket endpoint for real-time communication. The PWA wallet would connect here. The scaffold provides a basic echo server; a real block would implement its full WebSocket communication logic using handlers from the SDK or custom code.
 
-### WebSocket Endpoint
+### Configuration (Scaffold Example)
 
--   **`/ws`**: A WebSocket endpoint for real-time communication between this block instance and the wallet core (currently a simple echo server for testing). The wallet core would connect to this endpoint on the block's server.
+The scaffold (`routes/__init__.py`) demonstrates hardcoded `BLOCK_TYPE`, `DEFAULT_MANIFEST`, and `DEFAULT_CONTROLLER_SETTINGS`. A production block would:
+-   Define its `Manifest` programmatically or load it from a configuration file.
+-   Receive its `ControllerSettings` (if an Action Block) from the PWA wallet via the WebSocket connection when a user session starts.
 
-## Configuration
+## Developing Your Own Block
 
-The specific details of the block (its `Manifest` and, for Action Blocks, its initial `ControlSettings`) are currently hardcoded in `routes/__init__.py` for demonstration (see `BLOCK_TYPE`, `DEFAULT_MANIFEST`, `DEFAULT_CONTROL_SETTINGS`). In a production block, these would be loaded from a configuration file (e.g., `config.yaml` or `.env`) or set via environment variables when the block's server instance is started. The `ControlSettings` for an Action Block are ultimately defined by the end-user via their wallet application and would be supplied to the block instance upon activation.
+1.  **Choose Block Type:** Decide if you're building an Analyst or Action Block.
+2.  **Set Up Project:**
+    *   **Option A (Recommended for FastAPI):** Clone this scaffold repository and customize it.
+    *   **Option B (Advanced):** Start a new Python project, `pip install block-kit-sdk` (when available), and integrate the SDK components with your chosen web framework.
+3.  **Implement Core Logic:** Write the unique analysis or strategy logic for your block, subclassing from `AnalystBlock` or `ActionBlock`.
+4.  **Define Manifest:** Create and populate the `Manifest` for your block.
+5.  **Implement Communication:** Set up WebSocket handlers for interaction with the PWA wallet, using SDK utilities where appropriate.
+6.  **Test Thoroughly:** Unit test and integration test your block's logic and communication.
+7.  **Deploy:** Host your block server on your preferred infrastructure.
+8.  **Register (Future Step):** Expect a process to register your block with Ampersand Labs to make it discoverable by AI Wallet users.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request.
+Contributions to the Block Kit SDK and scaffold are welcome! Please open an issue or submit a pull request.
 
 ## License
 
