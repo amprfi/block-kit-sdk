@@ -3,9 +3,9 @@ from typing import Dict, Optional
 import uuid # Still useful for proposal IDs or other internal uses if needed
 
 from blocks.models import Manifest, TransactionProposal
-from control.models import ControlSettings
+from controller.models import ControllerSettings
 from blocks.base import AnalystBlock, ActionBlock, BaseBlock
-from control.manager import ControlManager
+from controller.manager import ControllerManager
 
 router = APIRouter()
 
@@ -24,10 +24,10 @@ DEFAULT_MANIFEST = Manifest(
     description="A default action block instance using the Block Kit library."
 )
 
-# ControlSettings are only relevant for ActionBlocks
-DEFAULT_CONTROL_SETTINGS: Optional[ControlSettings] = None
+# ControllerSettings are only relevant for ActionBlocks
+DEFAULT_CONTROL_SETTINGS: Optional[ControllerSettings] = None
 if BLOCK_TYPE == "action":
-    DEFAULT_CONTROL_SETTINGS = ControlSettings(
+    DEFAULT_CONTROL_SETTINGS = ControllerSettings(
         authorized_duration_days=30,
         asset_id="BTC", # Example
         max_amount_per_transaction=1.0, # Example: 1 BTC
@@ -39,14 +39,14 @@ block_instance: BaseBlock
 if BLOCK_TYPE == "action":
     if DEFAULT_CONTROL_SETTINGS is None:
         # This should not happen if configured correctly
-        raise RuntimeError("Action block configured but no control settings provided.")
-    block_instance = ActionBlock(manifest=DEFAULT_MANIFEST, control_settings=DEFAULT_CONTROL_SETTINGS)
+        raise RuntimeError("Action block configured but no controller settings provided.")
+    block_instance = ActionBlock(manifest=DEFAULT_MANIFEST, controller_settings=DEFAULT_CONTROL_SETTINGS)
 elif BLOCK_TYPE == "analyst":
     block_instance = AnalystBlock(manifest=DEFAULT_MANIFEST)
 else:
     raise RuntimeError(f"Invalid BLOCK_TYPE configured: {BLOCK_TYPE}")
 
-control_manager = ControlManager()
+controller_manager = ControllerManager()
 # For tracking cumulative spend for the ActionBlock (if applicable)
 # This state needs to persist for the lifetime of the block's authorized duration.
 # For a stateless server, this would need external storage (e.g., Redis, DB).
@@ -83,13 +83,13 @@ async def propose_transaction_endpoint(proposal_input: TransactionProposal):
     # proposal_input.block_id = block_instance.manifest.name # Or a more unique ID from manifest
 
     if isinstance(block_instance, ActionBlock):
-        # ActionBlock specific logic: check against controls
-        if block_instance.control_settings is None: # Should be set at init for ActionBlock
-             raise HTTPException(status_code=500, detail="Internal error: Controls not configured for action block.")
+        # ActionBlock specific logic: check against controllers
+        if block_instance.controller_settings is None: # Should be set at init for ActionBlock
+             raise HTTPException(status_code=500, detail="Internal error: Controllers not configured for action block.")
 
-        is_compliant, reason = control_manager.is_proposal_compliant(
+        is_compliant, reason = controller_manager.is_proposal_compliant(
             proposal=proposal_input,
-            control_settings=block_instance.control_settings,
+            controller_settings=block_instance.controller_settings,
             current_cumulative_spent=current_cumulative_spend
         )
 
@@ -115,12 +115,12 @@ async def propose_transaction_endpoint(proposal_input: TransactionProposal):
     # This case should ideally not be reached if block_instance is always Analyst or Action
     raise HTTPException(status_code=500, detail="Internal error: Unknown block instance type.")
 
-# Optional: Endpoint to get current control settings for an ActionBlock
+# Optional: Endpoint to get current controller settings for an ActionBlock
 if BLOCK_TYPE == "action":
-    @router.get("/control_settings", response_model=ControlSettings)
-    async def get_control_settings():
-        if isinstance(block_instance, ActionBlock) and block_instance.control_settings:
-            return block_instance.control_settings
-        raise HTTPException(status_code=404, detail="Control settings not applicable or not found for this block.")
+    @router.get("/controller_settings", response_model=ControllerSettings)
+    async def get_controller_settings():
+        if isinstance(block_instance, ActionBlock) and block_instance.controller_settings:
+            return block_instance.controller_settings
+        raise HTTPException(status_code=404, detail="Controller settings not applicable or not found for this block.")
 
 # (Consider adding a POST /configure endpoint later if needed for runtime configuration by wallet core)

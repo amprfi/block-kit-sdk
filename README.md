@@ -16,21 +16,21 @@ This `block-kit` repository serves as the foundational library that a block deve
 
 ### Prerequisites
 
-- Python 3.10+ (as per current environment, adjust if needed)
+- Python 3.10+
 - Pip for package management
-- A virtual environment is recommended.
+- A virtual environment, such as `venv` is recommended
 
 ### Installation
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/block-kit.git # Replace with actual repo URL
+    git clone https://github.com/amprfi/block-kit.git
     cd block-kit
     ```
 2.  Create and activate a virtual environment (example using `venv`):
     ```bash
     python -m venv .venv
-    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+    source .venv/bin/activate
     ```
 3.  Install the required packages:
     ```bash

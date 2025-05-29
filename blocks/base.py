@@ -1,5 +1,5 @@
 from blocks.models import Manifest, TransactionProposal
-from control.models import ControlSettings
+from controller.models import ControllerSettings
 from typing import Optional
 
 class BaseBlock:
@@ -144,20 +144,20 @@ class ActionBlock(BaseBlock):
     Base class for Action Blocks.
 
     Action Blocks are designed to execute automated strategies, by
-    proposing transactions. They operate under `ControlSettings` defined by the
+    proposing transactions. They operate under `ControllerSettings` defined by the
     end-user via their wallet application.
 
     Attributes:
-        control_settings (ControlSettings): The operational limits and permissions
+        controller_settings (ControllerSettings): The operational limits and permissions
                                             for this block instance.
     """
-    def __init__(self, manifest: Manifest, control_settings: ControlSettings):
+    def __init__(self, manifest: Manifest, controller_settings: ControllerSettings):
         """
         Initializes the ActionBlock.
 
         Args:
             manifest: An instance of the `Manifest` model. Must have `block_type` set to "action".
-            control_settings: An instance of `ControlSettings` defining the block's operational limits.
+            controller_settings: An instance of `ControllerSettings` defining the block's operational limits.
         
         Raises:
             ValueError: If the provided manifest's `block_type` is not "action".
@@ -165,16 +165,16 @@ class ActionBlock(BaseBlock):
         if manifest.block_type != "action":
             raise ValueError("Manifest 'block_type' must be 'action' for ActionBlock.")
         super().__init__(manifest)
-        self.control_settings = control_settings
-        # logging.info(f"ActionBlock '{self.manifest.name}' initialized with control settings.")
+        self.controller_settings = controller_settings
+        # logging.info(f"ActionBlock '{self.manifest.name}' initialized with controller settings.")
 
     def propose_transaction(self, proposal_data: TransactionProposal) -> dict:
         """
-        Proposes a transaction, performing preliminary checks against its `ControlSettings`.
+        Proposes a transaction, performing preliminary checks against its `ControllerSettings`.
 
-        Note: A more comprehensive compliance check against `ControlSettings` (including
+        Note: A more comprehensive compliance check against `ControllerSettings` (including
         aspects like cumulative limits and duration) is expected to be performed by
-        the Wallet Core, using the `ControlManager`. This method provides an initial
+        the Wallet Core, using the `ControllerManager`. This method provides an initial
         safeguard within the block itself.
 
         Args:
@@ -185,22 +185,22 @@ class ActionBlock(BaseBlock):
             fail, status may be "rejected_by_block_pre_check". Otherwise, it calls
             the base class's `propose_transaction` method.
         """
-        # Perform preliminary checks against control settings.
-        if proposal_data.asset_id != self.control_settings.asset_id:
+        # Perform preliminary checks against controller settings.
+        if proposal_data.asset_id != self.controller_settings.asset_id:
             # logging.warning(f"ActionBlock '{self.manifest.name}': Proposal asset '{proposal_data.asset_id}' "
-            #                 f"mismatches controlled asset '{self.control_settings.asset_id}'.")
+            #                 f"mismatches controllerled asset '{self.controller_settings.asset_id}'.")
             return {
                 "status": "rejected_by_block_pre_check",
-                "reason": "Asset mismatch with block's control settings.",
+                "reason": "Asset mismatch with block's controller settings.",
                 "proposal": proposal_data.model_dump()
             }
 
-        if proposal_data.amount > self.control_settings.max_amount_per_transaction:
+        if proposal_data.amount > self.controller_settings.max_amount_per_transaction:
             # logging.warning(f"ActionBlock '{self.manifest.name}': Proposal amount {proposal_data.amount} "
-            #                 f"exceeds max_amount_per_transaction {self.control_settings.max_amount_per_transaction}.")
+            #                 f"exceeds max_amount_per_transaction {self.controller_settings.max_amount_per_transaction}.")
             return {
                 "status": "rejected_by_block_pre_check",
-                "reason": "Exceeds maximum amount per transaction defined in block's control settings.",
+                "reason": "Exceeds maximum amount per transaction defined in block's controller settings.",
                 "proposal": proposal_data.model_dump()
             }
 

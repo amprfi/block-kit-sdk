@@ -1,26 +1,26 @@
 from blocks.models import TransactionProposal
-from control.models import ControlSettings # Renamed from Control to ControlSettings in models
+from controller.models import ControllerSettings # Renamed from Controller to ControllerSettings in models
 
-class ControlManager:
+class ControllerManager:
     def __init__(self):
-        # In a more complex scenario, this manager might load/cache control settings
+        # In a more complex scenario, this manager might load/cache controller settings
         # or interact with a database of them. For now, it's stateless.
         pass
 
     def is_proposal_compliant(
         self,
         proposal: TransactionProposal,
-        control_settings: ControlSettings,
+        controller_settings: ControllerSettings,
         current_cumulative_spent: float = 0.0 # This would need to be tracked by the wallet core per block instance
     ) -> tuple[bool, str]:
         """
-        Checks if a transaction proposal is compliant with the given control settings.
+        Checks if a transaction proposal is compliant with the given controller settings.
 
         Args:
             proposal: The TransactionProposal object.
-            control_settings: The ControlSettings for the block instance.
+            controller_settings: The ControllerSettings for the block instance.
             current_cumulative_spent: The total amount already spent by this block
-                                      under these controls within the current duration.
+                                      under these controllers within the current duration.
 
         Returns:
             A tuple (is_compliant: bool, reason: str).
@@ -28,8 +28,8 @@ class ControlManager:
         reason = "Compliant"
 
         # Check asset ID
-        if proposal.asset_id != control_settings.asset_id:
-            reason = f"Asset mismatch: Proposal for '{proposal.asset_id}', control is for '{control_settings.asset_id}'."
+        if proposal.asset_id != controller_settings.asset_id:
+            reason = f"Asset mismatch: Proposal for '{proposal.asset_id}', controller is for '{controller_settings.asset_id}'."
             return False, reason
 
         # Check max amount per transaction
@@ -37,15 +37,15 @@ class ControlManager:
             reason = "Transaction amount must be positive."
             return False, reason
             
-        if proposal.amount > control_settings.max_amount_per_transaction:
-            reason = f"Amount {proposal.amount} exceeds max per transaction ({control_settings.max_amount_per_transaction})."
+        if proposal.amount > controller_settings.max_amount_per_transaction:
+            reason = f"Amount {proposal.amount} exceeds max per transaction ({controller_settings.max_amount_per_transaction})."
             return False, reason
 
         # Check cumulative max amount
-        if (current_cumulative_spent + proposal.amount) > control_settings.cumulative_max_amount:
+        if (current_cumulative_spent + proposal.amount) > controller_settings.cumulative_max_amount:
             reason = (
                 f"Cumulative amount {current_cumulative_spent + proposal.amount} would exceed "
-                f"limit ({control_settings.cumulative_max_amount})."
+                f"limit ({controller_settings.cumulative_max_amount})."
             )
             return False, reason
         

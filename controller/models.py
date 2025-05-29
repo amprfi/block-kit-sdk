@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel
 
-class ControlSettings(BaseModel):
+class ControllerSettings(BaseModel):
     # block_id: str # This might be managed by the wallet core, linking settings to a block instance
     # For now, let's assume these settings are generic and applied by the wallet core.
     # If these settings are to be part of a payload for registering/updating controls for a block,
