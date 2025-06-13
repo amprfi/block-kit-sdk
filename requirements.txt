@@ -2,3 +2,5 @@ fastapi[standard]
 WebSocket
 uvicorn
 pydantic
+pydantic-extra-types
+pycountry
