@@ -1,6 +1,4 @@
-fastapi[standard]
-WebSocket
-uvicorn
+websocket
 pydantic
 pydantic-extra-types
 pycountry
