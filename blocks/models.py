@@ -72,20 +72,6 @@ class Manifest(BaseModel):
                     data['fee'] = data['fee'][0]
         return data
 
-class TransactionProposal(BaseModel):
-    """
-    Represents a transaction proposed by a block to the Wallet Core.
-    """
-    block_id: str  # Identifier for the block instance proposing the transaction (e.g., manifest.name or a unique instance ID)
-    action_type: str  # e.g., "buy", "sell", "stake", "unstake", "swap"
-    asset_id: str  # Identifier for the primary asset involved (e.g., token symbol, contract address)
-    amount: PositiveFloat   # Amount of the primary asset
-    currency: str   # Currency of the 'amount' field (e.g., "USD" if amount is a monetary value, or asset_id if amount is in units of the asset)
-    # For more complex transactions like swaps, additional fields might be needed:
-    # to_asset_id: Optional[str] = None
-    # to_amount: Optional[float] = None
-    justification: Optional[str] = None  # Optional reason or analysis supporting the proposal
-
 # Manual testing (to be removed)
 try:
     manifest = Manifest(
