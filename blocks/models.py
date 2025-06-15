@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Union, Any
+from typing import Literal, Optional, Union, Any, Dict
 from enum import Enum
 from pydantic import BaseModel, model_validator, ValidationError, PositiveFloat, HttpUrl
 from pydantic_extra_types.country import CountryAlpha3
@@ -31,20 +31,18 @@ class BaseFee(BaseModel):
 
 class OneTimeFixedFee(BaseFee):
     """Defines a fixed, one-time fee."""
-    fee_type: Literal[FeeType.FIXED_ONE_TIME] = FeeType.FIXED_ONE_TIME
+    fee_type: Literal[FeeType.FIXED_ONE_TIME]
     amount: PositiveFloat
 
 class RecurringFixedFee(BaseFee):
     """Defines a fixed fee that recurs at a specified interval."""
-    fee_type: Literal[FeeType.FIXED_RECURRING] = FeeType.FIXED_RECURRING
+    fee_type: Literal[FeeType.FIXED_RECURRING]
     amount: PositiveFloat
     interval: RecurringInterval
 
 FeeType = Union[OneTimeFixedFee, RecurringFixedFee]
     
 # --- Core Block Models ---
-
-
 
 class Manifest(BaseModel):
     """
@@ -71,20 +69,3 @@ class Manifest(BaseModel):
                     # If it's a single-item list, extract the item
                     data['fee'] = data['fee'][0]
         return data
-
-# Manual testing (to be removed)
-try:
-    manifest = Manifest(
-        name="Example Block",
-        version="1.0",
-        block_type="analyst",
-        publisher="Example Publisher",
-        description="An example block",
-        allowed_jurisdictions=["USA", "CAN"],
-         fee=[         
-            OneTimeFixedFee(amount=10.0, fee_currency="USDT"),
-         ]
-    )
-    print(manifest)
-except ValidationError as e:
-    print(f"Validation error: {e}")
