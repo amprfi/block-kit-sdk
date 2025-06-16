@@ -40,7 +40,7 @@ class RecurringFixedFee(BaseFee):
     amount: PositiveFloat
     interval: RecurringInterval
 
-FeeType = Union[OneTimeFixedFee, RecurringFixedFee]
+Fee = Union[OneTimeFixedFee, RecurringFixedFee]
     
 # --- Core Block Models ---
 
@@ -55,7 +55,7 @@ class Manifest(BaseModel):
     publisher: str
     description: str
     license: Optional[tuple[str, HttpUrl]] = None
-    fee: Optional[FeeType] = None
+    fee: Optional[Fee] = None
     allowed_jurisdictions: Optional[list[CountryAlpha3]] = None
 
     @model_validator(mode='before')
