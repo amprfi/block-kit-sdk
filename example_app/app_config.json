@@ -1,0 +1,16 @@
+{
+  "name": "Analytics Data Processor",
+  "version": "2.1.0",
+  "block_type": "analyst",
+  "publisher": "DataCorp Inc.",
+  "description": "A block that processes and analyzes financial data",
+  "license": ["Apache-2.0", "https://www.apache.org/licenses/LICENSE-2.0"],
+  "allowed_jurisdictions": ["USA", "CAN", "GBR", "AUS"],
+  "fee": {
+    "fee_type": "fixed_recurring",
+    "amount": 50.0,
+    "fee_currency": "USDT",
+    "interval": "monthly",
+    "description": "Monthly subscription fee for premium analytics"
+  }
+}
