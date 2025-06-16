@@ -17,12 +17,13 @@ class RecurringInterval(str, Enum):
     ANNUALLY = "annually"
 
 class FeeCurrency(str, Enum):
-    """Enumeration of possible currencies for fees."""
+    """Enumeration of accepted fee currencies."""
     DAI = "DAI"
     USDC = "USDC"
     USDT = "USDT"
     AMPR = "AMPR"
     ETH = "ETH"
+    BTC = "BTC"
 
 class BaseFee(BaseModel):
     """Base model for all fee types"""
