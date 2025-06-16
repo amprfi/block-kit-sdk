@@ -1,10 +1,8 @@
 from blocks.models import TransactionProposal
-from controller.models import ControllerSettings # Renamed from Controller to ControllerSettings in models
+from controller.models import ControllerSettings
 
 class ControllerManager:
     def __init__(self):
-        # In a more complex scenario, this manager might load/cache controller settings
-        # or interact with a database of them. For now, it's stateless.
         pass
 
     def is_proposal_compliant(
