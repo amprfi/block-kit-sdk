@@ -9,3 +9,4 @@ class BaseController(BaseModel):
 class AnalystController(BaseController):
     """Controller for Analyst blocks"""
     portfolio_access: bool = False
+    advice_allowed: bool = False
