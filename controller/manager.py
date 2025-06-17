@@ -43,7 +43,7 @@ class ControllerManager:
             return False, reason
         
         # Checks if operation type is allowed
-        if operation_type is not 'send_message':
+        if operation_type is not 'chat_message':
             reason = f"Invalid operation type: {operation_type}"
             return False, reason
 
