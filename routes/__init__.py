@@ -3,9 +3,9 @@ from typing import Dict, Optional
 import uuid # Still useful for proposal IDs or other internal uses if needed
 
 from blocks.models import Manifest, TransactionProposal
-from controller.models import ControllerSettings
+from wallet_controller.models import ControllerSettings
 from blocks.base import AnalystBlock, ActionBlock, BaseBlock
-from controller.manager import ControllerManager
+from wallet_controller.manager import ControllerManager
 
 router = APIRouter()
 
