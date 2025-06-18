@@ -149,6 +149,10 @@ The scaffold (`routes/__init__.py`) demonstrates hardcoded `BLOCK_TYPE`, `DEFAUL
 7.  **Deploy:** Host your block server on your preferred infrastructure.
 8.  **Register (Future Step):** Expect a process to register your block with Ampersand Labs to make it discoverable by AI Wallet users.
 
-## Contributing
+## Contributions and License
 
-Contributions to the Block Kit SDK and scaffold are welcome! Please open an issue or submit a pull request.
+Contributions to the Block Kit SDK are welcome! Please open an issue or submit a pull request. If you're interested in getting involved, you can check out our [Discourse](https://www.discourse.org/).
+
+All code in this repository is licensed under the Apache License, Version 2.0. See the LICENSE file for details.
+
+Copyright 2025 Ampersand Labs B.V.
