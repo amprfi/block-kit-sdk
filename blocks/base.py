@@ -1,5 +1,5 @@
 from blocks.models import Manifest, TransactionProposal
-from controller.models import ControllerSettings
+from wallet_controller.models import ControllerSettings
 from typing import Optional
 
 class BaseBlock:
