@@ -24,6 +24,7 @@ class FeeCurrency(str, Enum):
     AMPR = "AMPR"
     ETH = "ETH"
     BTC = "BTC"
+    SOL = "SOL"
 
 class BaseFee(BaseModel):
     """Base model for all fee types"""
