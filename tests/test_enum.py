@@ -20,5 +20,5 @@ def test_fee_currency_enum():
     assert FeeCurrency.SOL == "SOL"
 
 def test_number_of_accepted_currencies():
-    expected_number_of_currencies = 6
+    expected_number_of_currencies = 7
     assert len(FeeCurrency) == expected_number_of_currencies
