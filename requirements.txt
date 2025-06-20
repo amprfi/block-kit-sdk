@@ -1,4 +1,0 @@
-websocket
-pydantic
-pydantic-extra-types
-pycountry
