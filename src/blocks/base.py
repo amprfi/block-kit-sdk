@@ -1,5 +1,4 @@
-from blocks.models import Manifest, TransactionProposal
-from wallet_controller.models import ControllerSettings
+from blocks.models import Manifest
 from typing import Optional
 
 class BaseBlock:
@@ -29,27 +28,6 @@ class BaseBlock:
         # Consider replacing print with logging in a real SDK:
         # import logging
         # logging.info(f"Block '{self.manifest.name}' initialized.")
-
-    def propose_transaction(self, proposal_data: TransactionProposal) -> dict:
-        """
-        Formats a transaction proposal to be sent from the block to the Wallet Core.
-
-        Block developers should ensure their block's logic culminates in creating a
-        `TransactionProposal` object and then can use this method (or override it)
-        to structure the final output. The actual submission of this proposal to
-        the Wallet Core is handled by the Block Kit server infrastructure via its API.
-
-        Args:
-            proposal_data: A `TransactionProposal` model instance detailing the transaction.
-
-        Returns:
-            A dictionary representing the proposal, typically including a 'status'
-            and the 'proposal' details (e.g., after model dumping).
-            Example: `{"status": "proposed", "proposal": proposal_data.model_dump()}`
-        """
-        # This base implementation simply returns a standard structure.
-        # Specific block types (like ActionBlock) may add pre-checks or modifications.
-        return {"status": "proposed", "proposal": proposal_data.model_dump()}
 
     async def connect_to_backend(self, backend_url: str):
         """
@@ -135,74 +113,3 @@ class AnalystBlock(BaseBlock):
             raise ValueError("Manifest 'block_type' must be 'analyst' for AnalystBlock.")
         super().__init__(manifest)
         # logging.info(f"AnalystBlock '{self.manifest.name}' initialized.")
-
-    # Developers can add custom methods here, e.g., get_market_report(), analyze_asset(asset_id), etc.
-    # They can still use `propose_transaction` if their analysis leads to a suggestion.
-
-class ActionBlock(BaseBlock):
-    """
-    Base class for Action Blocks.
-
-    Action Blocks are designed to execute automated strategies, by
-    proposing transactions. They operate under `ControllerSettings` defined by the
-    end-user via their wallet application.
-
-    Attributes:
-        controller_settings (ControllerSettings): The operational limits and permissions
-                                            for this block instance.
-    """
-    def __init__(self, manifest: Manifest, controller_settings: ControllerSettings):
-        """
-        Initializes the ActionBlock.
-
-        Args:
-            manifest: An instance of the `Manifest` model. Must have `block_type` set to "action".
-            controller_settings: An instance of `ControllerSettings` defining the block's operational limits.
-        
-        Raises:
-            ValueError: If the provided manifest's `block_type` is not "action".
-        """
-        if manifest.block_type != "action":
-            raise ValueError("Manifest 'block_type' must be 'action' for ActionBlock.")
-        super().__init__(manifest)
-        self.controller_settings = controller_settings
-        # logging.info(f"ActionBlock '{self.manifest.name}' initialized with controller settings.")
-
-    def propose_transaction(self, proposal_data: TransactionProposal) -> dict:
-        """
-        Proposes a transaction, performing preliminary checks against its `ControllerSettings`.
-
-        Note: A more comprehensive compliance check against `ControllerSettings` (including
-        aspects like cumulative limits and duration) is expected to be performed by
-        the Wallet Core, using the `ControllerManager`. This method provides an initial
-        safeguard within the block itself.
-
-        Args:
-            proposal_data: A `TransactionProposal` model instance.
-
-        Returns:
-            A dictionary indicating the status of the proposal. If preliminary checks
-            fail, status may be "rejected_by_block_pre_check". Otherwise, it calls
-            the base class's `propose_transaction` method.
-        """
-        # Perform preliminary checks against controller settings.
-        if proposal_data.asset_id != self.controller_settings.asset_id:
-            # logging.warning(f"ActionBlock '{self.manifest.name}': Proposal asset '{proposal_data.asset_id}' "
-            #                 f"mismatches controllerled asset '{self.controller_settings.asset_id}'.")
-            return {
-                "status": "rejected_by_block_pre_check",
-                "reason": "Asset mismatch with block's controller settings.",
-                "proposal": proposal_data.model_dump()
-            }
-
-        if proposal_data.amount > self.controller_settings.max_amount_per_transaction:
-            # logging.warning(f"ActionBlock '{self.manifest.name}': Proposal amount {proposal_data.amount} "
-            #                 f"exceeds max_amount_per_transaction {self.controller_settings.max_amount_per_transaction}.")
-            return {
-                "status": "rejected_by_block_pre_check",
-                "reason": "Exceeds maximum amount per transaction defined in block's controller settings.",
-                "proposal": proposal_data.model_dump()
-            }
-
-        # If preliminary checks pass, proceed with the standard proposal process.
-        return super().propose_transaction(proposal_data)
