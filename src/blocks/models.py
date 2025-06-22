@@ -54,10 +54,10 @@ class Manifest(BaseModel):
     name: str
     version: str
     block_type: Literal["analyst", "action", "custodial"]
-    publisher: str
+    publisher: tuple[str, str]
     description: str
     license: Optional[tuple[str, HttpUrl]] = None
-    fee: Optional[Fee] = None
+    fee: Optional[Union[OneTimeFixedFee, RecurringFixedFee]] = None
     allowed_jurisdictions: Optional[list[CountryAlpha3]] = None
 
     @model_validator(mode='before')
