@@ -10,11 +10,6 @@ class BaseBlock:
 
     Attributes:
         manifest (Manifest): The manifest data for this block, provided upon initialization.
-        backend_ws: Placeholder for a WebSocket connection object. Blocks requiring
-                    communication with a custom backend service (e.g., a proprietary
-                    data API, an LLM) can use this attribute to store their
-                    WebSocket client. This is separate from the block's communication
-                    with the Wallet Core.
     """
     def __init__(self, manifest: Manifest):
         """
@@ -32,22 +27,11 @@ class BaseBlock:
     async def connect_to_backend(self, backend_url: str):
         """
         Placeholder method for a block to connect to its own custom backend service
-        via WebSockets. Developers should override this or implement connection logic
+        via XMTP. Developers should override this or implement connection logic
         if their block requires such a connection.
 
-        Example using the 'websockets' library (ensure it's an installed dependency):
-        ```python
-        # import websockets # Make sure 'websockets' library is installed
-        # try:
-        #     self.backend_ws = await websockets.connect(backend_url)
-        #     # logging.info(f"Block '{self.manifest.name}' connected to backend: {backend_url}")
-        # except Exception as e:
-        #     # logging.error(f"Block '{self.manifest.name}' backend connection error: {e}")
-        #     self.backend_ws = None
-        ```
-
         Args:
-            backend_url: The URL of the custom backend WebSocket service.
+            backend_url: The URL of the XMTP backend service.
         """
         # Developer to implement if needed.
         pass
@@ -55,7 +39,7 @@ class BaseBlock:
     async def send_to_backend(self, message: str):
         """
         Placeholder method to send a message to the block's custom backend via
-        an established WebSocket connection (self.backend_ws).
+        an established XMTP connection.
         """
         # if self.backend_ws:
         #     try:
@@ -63,7 +47,7 @@ class BaseBlock:
         #     except Exception as e:
         #         # logging.error(f"Error sending to backend: {e}")
         # else:
-        #     # logging.warning("No backend WebSocket connection to send message.")
+        #     # logging.warning("No backend XMTP connection to send message.")
         pass
 
     async def receive_from_backend(self) -> Optional[str]:
@@ -80,7 +64,7 @@ class BaseBlock:
 
     async def close_backend_connection(self):
         """
-        Placeholder method to close the WebSocket connection to the custom backend.
+        Placeholder method to close the XMTP connection to the custom backend.
         """
         # if self.backend_ws:
         #     try:
