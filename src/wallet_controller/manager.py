@@ -1,4 +1,4 @@
-from wallet_interface.analyst import AnalystWalletInterface
+from wallet_controller.analyst import AnalystWalletInterface
 from wallet_controller.models import AnalystController
 from typing import Tuple, Optional
 
