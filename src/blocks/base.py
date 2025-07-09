@@ -1,99 +1,118 @@
-from blocks.models import Manifest
+from abc import ABC, abstractmethod
 from typing import Optional
+from blocks.models import Manifest, FeeType, FeeCurrency
 
-class BaseBlock:
+class BaseBlock(ABC):
     """
-    Base class for all Block types.
-
-    Developers creating a new Block should typically inherit from `AnalystBlock`
-    or `ActionBlock`, which themselves inherit from this `BaseBlock`.
-
-    Attributes:
-        manifest (Manifest): The manifest data for this block, provided upon initialization.
+    Abstract base class for all Block types with required core methods
+    and optional concrete implementations.
     """
+
+    @abstractmethod
     def __init__(self, manifest: Manifest):
         """
-        Initializes the BaseBlock.
+        Required initialization method for all blocks.
 
         Args:
             manifest: An instance of the `Manifest` model containing metadata for this block.
         """
         self.manifest = manifest
-        self.backend_ws = None # Initialize to None; developer must manage actual connection.
-        # Consider replacing print with logging in a real SDK:
-        # import logging
-        # logging.info(f"Block '{self.manifest.name}' initialized.")
+        self.backend_ws = None
 
-    async def connect_to_backend(self, backend_url: str):
+    @abstractmethod
+    async def initialize(self) -> None:
         """
-        Placeholder method for a block to connect to its own custom backend service
-        via XMTP. Developers should override this or implement connection logic
-        if their block requires such a connection.
-
-        Args:
-            backend_url: The URL of the XMTP backend service.
+        Required initialization method that all blocks must implement.
+        This is called when the block is first loaded.
         """
-        # Developer to implement if needed.
         pass
 
-    async def send_to_backend(self, message: str):
+    @abstractmethod
+    async def get_fee_structure(self) -> dict:
         """
-        Placeholder method to send a message to the block's custom backend via
-        an established XMTP connection.
+        Required method to specify the fee structure for this block.
+        All blocks must implement this method.
+
+        Returns:
+            Dictionary containing the fee structure information
         """
-        # if self.backend_ws:
-        #     try:
-        #         await self.backend_ws.send(message)
-        #     except Exception as e:
-        #         # logging.error(f"Error sending to backend: {e}")
-        # else:
-        #     # logging.warning("No backend XMTP connection to send message.")
         pass
+
+    async def connect_to_backend(self, backend_url: str) -> None:
+        """
+        Optional method to connect to a custom backend service via XMTP.
+        Default implementation does nothing.
+        """
+        pass
+
+    async def send_to_backend(self, message: str) -> None:
+        """
+        Optional method to send a message to the block's custom backend.
+        Default implementation does nothing.
+        """
+        if self.backend_ws:
+            try:
+                await self.backend_ws.send(message)
+            except Exception as e:
+                print(f"Error sending to backend: {e}")
+        else:
+            print("No backend XMTP connection to send message.")
 
     async def receive_from_backend(self) -> Optional[str]:
         """
-        Placeholder method to receive a message from the block's custom backend.
+        Optional method to receive a message from the block's custom backend.
+        Default implementation returns None.
         """
-        # if self.backend_ws:
-        #     try:
-        #         return await self.backend_ws.recv()
-        #     except Exception as e:
-        #         # logging.error(f"Error receiving from backend: {e}")
-        # return None
-        return None # Explicitly return None if not implemented or no connection
+        if self.backend_ws:
+            try:
+                return await self.backend_ws.recv()
+            except Exception as e:
+                print(f"Error receiving from backend: {e}")
+        return None
 
-    async def close_backend_connection(self):
+    async def close_backend_connection(self) -> None:
         """
-        Placeholder method to close the XMTP connection to the custom backend.
+        Optional method to close the XMTP connection to the custom backend.
+        Default implementation does nothing.
         """
-        # if self.backend_ws:
-        #     try:
-        #         await self.backend_ws.close()
-        #     except Exception as e:
-        #         # logging.error(f"Error closing backend connection: {e}")
-        #     finally:
-        #         self.backend_ws = None
-        pass
+        if self.backend_ws:
+            try:
+                await self.backend_ws.close()
+            except Exception as e:
+                print(f"Error closing backend connection: {e}")
+            finally:
+                self.backend_ws = None
 
 class AnalystBlock(BaseBlock):
     """
-    Base class for Analyst Blocks.
-
-    Analyst Blocks are designed primarily for research, data gathering, and providing
-    analytical insights. They may propose transactions based on their analysis,
-    or expose other methods for the Wallet Core to retrieve reports or data.
+    Abstract base class for Analyst Blocks with required analysis methods.
     """
+
     def __init__(self, manifest: Manifest):
         """
         Initializes the AnalystBlock.
 
         Args:
             manifest: An instance of the `Manifest` model. Must have `block_type` set to "analyst".
-        
+
         Raises:
             ValueError: If the provided manifest's `block_type` is not "analyst".
         """
         if manifest.block_type != "analyst":
             raise ValueError("Manifest 'block_type' must be 'analyst' for AnalystBlock.")
         super().__init__(manifest)
-        # logging.info(f"AnalystBlock '{self.manifest.name}' initialized.")
+
+    async def get_fee_structure(self) -> dict:
+        """
+        Required method to specify the fee structure for this analyst block.
+        All blocks must implement this method.
+
+        Returns:
+            Dictionary containing the fee structure information
+        """
+        return {
+            "type": FeeType.FIXED_ONE_TIME.value,
+            "currency": FeeCurrency.ETH.value,
+            "amount": 0,
+            "interval": None  # Only relevant for recurring fees
+        }

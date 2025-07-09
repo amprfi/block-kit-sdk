@@ -2,6 +2,13 @@ import pytest
 from blocks.base import AnalystBlock
 from blocks.models import Manifest
 
+class ConcreteAnalystBlock(AnalystBlock):
+    async def initialize(self):
+        pass
+
+    async def analyze(self, request: dict) -> str:
+        return "Analysis result"
+
 def test_analyst_block_initialization():
     manifest = Manifest(
         name="Test Analyst Block",
@@ -10,8 +17,8 @@ def test_analyst_block_initialization():
         publisher=("Test Publisher", "ID string"),
         description="Test description",
     )
-    block = AnalystBlock(manifest)
-    assert block.manifest == manifest
+    block = ConcreteAnalystBlock(manifest)
+    assert block.manifest.name == "Test Analyst Block"
 
 def test_analyst_block_initialization_invalid():
     manifest = Manifest(
@@ -22,4 +29,4 @@ def test_analyst_block_initialization_invalid():
         description="Test description"
     )
     with pytest.raises(ValueError):
-        AnalystBlock(manifest)
+        ConcreteAnalystBlock(manifest)
