@@ -3,6 +3,7 @@ from enum import Enum
 from pydantic import BaseModel, model_validator, ValidationError, PositiveFloat, HttpUrl, field_validator
 from pydantic_extra_types.country import CountryAlpha3
 from datetime import datetime, timezone
+import re
 
 # --- Fee Structure Models ---
 
